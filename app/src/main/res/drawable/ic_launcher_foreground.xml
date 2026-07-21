@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Underneath Card (Angled, face down with neon pink border) -->
+    <path
+        android:fillColor="#1F1135"
+        android:strokeColor="#FF007F"
+        android:strokeWidth="2.5"
+        android:pathData="M 24,30 L 46,24 C 49,23 52,25 53,28 L 65,72 C 66,75 64,78 61,79 L 39,85 C 36,86 33,84 32,81 L 20,37 C 19,34 21,31 24,30 Z" />
+
+    <!-- Foreground Card (On top, face up with neon cyan border) -->
+    <path
+        android:fillColor="#1F1135"
+        android:strokeColor="#00F0FF"
+        android:strokeWidth="2.5"
+        android:pathData="M 49,26 L 73,32 C 76,33 78,36 77,39 L 66,82 C 65,85 62,87 59,86 L 35,80 C 32,79 30,76 31,73 L 42,30 C 43,27 46,25 49,26 Z" />
+
+    <!-- Center matching Star icon inside the foreground card -->
+    <path
+        android:fillColor="#00F0FF"
+        android:pathData="M54,46 L55.5,50.5 L60,50.5 L56.5,53 L58,57.5 L54,55 L50,57.5 L51.5,53 L48,50.5 L52.5,50.5 Z" />
+        
+</vector>

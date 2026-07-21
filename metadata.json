@@ -1,0 +1,6 @@
+{
+  "name": "Memory Match",
+  "description": "A premium, highly polished memory matching game featuring Shadow, Sound, and Sequence matching modes, 100+ levels, daily challenges, and custom themes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
