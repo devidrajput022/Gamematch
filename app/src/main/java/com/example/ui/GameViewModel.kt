@@ -52,10 +52,31 @@ data class MemoryCard(
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: GameRepository
+    private val prefs = application.getSharedPreferences("game_settings", android.content.Context.MODE_PRIVATE)
+
+    private val _soundOn = MutableStateFlow(prefs.getBoolean("sound_on", true))
+    val soundOn: StateFlow<Boolean> = _soundOn.asStateFlow()
+
+    private val _darkMode = MutableStateFlow(prefs.getBoolean("dark_mode", true))
+    val darkMode: StateFlow<Boolean> = _darkMode.asStateFlow()
+
+    fun toggleSound() {
+        val newValue = !_soundOn.value
+        _soundOn.value = newValue
+        prefs.edit().putBoolean("sound_on", newValue).apply()
+        com.example.audio.AudioSynthesizer.isSoundEnabled = newValue
+    }
+
+    fun toggleDarkMode() {
+        val newValue = !_darkMode.value
+        _darkMode.value = newValue
+        prefs.edit().putBoolean("dark_mode", newValue).apply()
+    }
 
     init {
         val db = DatabaseProvider.getDatabase(application)
         repository = GameRepository(db)
+        com.example.audio.AudioSynthesizer.isSoundEnabled = prefs.getBoolean("sound_on", true)
     }
 
     // Database flows

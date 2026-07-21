@@ -14,6 +14,8 @@ import kotlin.math.sin
 object AudioSynthesizer {
     private val scope = CoroutineScope(Dispatchers.Default)
 
+    var isSoundEnabled: Boolean = true
+
     // Standard frequencies for matching pairs (C4 to C5 scale)
     val pairFrequencies = listOf(
         261.63f, // C4
@@ -28,6 +30,7 @@ object AudioSynthesizer {
 
     fun playTone(frequency: Float, durationMs: Long = 250, decayRate: Double = 8.0) {
         scope.launch {
+            if (!isSoundEnabled) return@launch
             try {
                 val sampleRate = 44100
                 val numSamples = (sampleRate * (durationMs / 1000.0)).toInt()

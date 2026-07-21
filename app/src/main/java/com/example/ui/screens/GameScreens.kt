@@ -186,6 +186,26 @@ fun getColorForValue(valueId: Int): Color {
 }
 
 // ----------------------------------------------------------------------------
+// ADAPTED THEME HELPER
+// ----------------------------------------------------------------------------
+
+fun getAdaptedTheme(baseTheme: GameTheme, isDarkMode: Boolean): GameTheme {
+    if (isDarkMode) return baseTheme
+    return baseTheme.copy(
+        backgroundBrush = Brush.verticalGradient(
+            colors = listOf(Color(0xFFF8FAFC), Color(0xFFE2E8F0), Color(0xFFF1F5F9))
+        ),
+        cardBackground = Color(0xFFFFFFFF),
+        cardBorderColor = baseTheme.accentColor.copy(alpha = 0.5f),
+        cardBackGradient = Brush.linearGradient(
+            colors = listOf(baseTheme.accentColor, baseTheme.accentColor.copy(alpha = 0.6f))
+        ),
+        textColor = Color(0xFF0F172A),
+        isDark = false
+    )
+}
+
+// ----------------------------------------------------------------------------
 // BASE MAIN CONTENT (SCREEN SELECTOR)
 // ----------------------------------------------------------------------------
 
@@ -193,13 +213,15 @@ fun getColorForValue(valueId: Int): Color {
 fun MemoryMatchApp(viewModel: GameViewModel) {
     val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
 
     val activeThemeId = profile?.activeThemeId ?: "synthwave"
-    val theme = GameThemes[activeThemeId] ?: GameThemes.values.first()
+    val baseTheme = GameThemes[activeThemeId] ?: GameThemes.values.first()
+    val theme = getAdaptedTheme(baseTheme, darkMode)
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF020617)
+        color = if (darkMode) Color(0xFF020617) else Color(0xFFF8FAFC)
     ) {
         Box(
             modifier = Modifier
@@ -247,6 +269,7 @@ fun MemoryMatchApp(viewModel: GameViewModel) {
 
 @Composable
 fun BackgroundAtmosphere(theme: GameTheme) {
+    val alphaFactor = if (theme.isDark) 1f else 0.3f
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -254,7 +277,7 @@ fun BackgroundAtmosphere(theme: GameTheme) {
                 // Top-left blur glow: Indigo/Violet
                 drawRect(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF4F46E5).copy(alpha = 0.20f), Color.Transparent),
+                        colors = listOf(Color(0xFF4F46E5).copy(alpha = 0.20f * alphaFactor), Color.Transparent),
                         center = Offset(-100f, -100f),
                         radius = size.minDimension * 0.8f
                     )
@@ -262,7 +285,7 @@ fun BackgroundAtmosphere(theme: GameTheme) {
                 // Mid-right blur glow: Fuchsia
                 drawRect(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFFD946EF).copy(alpha = 0.15f), Color.Transparent),
+                        colors = listOf(Color(0xFFD946EF).copy(alpha = 0.15f * alphaFactor), Color.Transparent),
                         center = Offset(size.width + 150f, size.height * 0.5f),
                         radius = size.minDimension * 0.9f
                     )
@@ -270,7 +293,7 @@ fun BackgroundAtmosphere(theme: GameTheme) {
                 // Bottom glow: Cyan
                 drawRect(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF06B6D4).copy(alpha = 0.12f), Color.Transparent),
+                        colors = listOf(Color(0xFF06B6D4).copy(alpha = 0.12f * alphaFactor), Color.Transparent),
                         center = Offset(size.width * 0.5f, size.height + 100f),
                         radius = size.minDimension * 0.8f
                     )
@@ -294,9 +317,11 @@ fun ImmersiveBottomNavigation(
     ) {
         // Nav bar container
         Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A).copy(alpha = 0.80f)),
+            colors = CardDefaults.cardColors(
+                containerColor = if (theme.isDark) Color(0xFF0F172A).copy(alpha = 0.80f) else Color.White.copy(alpha = 0.90f)
+            ),
             shape = RoundedCornerShape(50.dp),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
+            border = BorderStroke(1.dp, if (theme.isDark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.10f)),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
@@ -314,6 +339,7 @@ fun ImmersiveBottomNavigation(
                     label = "Home",
                     icon = Icons.Default.Home,
                     isActive = currentScreen == Screen.Home,
+                    isDark = theme.isDark,
                     onClick = { onNavigate(Screen.Home) },
                     modifier = Modifier.weight(1f)
                 )
@@ -323,6 +349,7 @@ fun ImmersiveBottomNavigation(
                     label = "Levels",
                     icon = Icons.Default.Map,
                     isActive = currentScreen == Screen.LevelMap,
+                    isDark = theme.isDark,
                     onClick = { onNavigate(Screen.LevelMap) },
                     modifier = Modifier.weight(1f)
                 )
@@ -335,6 +362,7 @@ fun ImmersiveBottomNavigation(
                     label = "Store",
                     icon = Icons.Default.Palette,
                     isActive = currentScreen == Screen.Themes,
+                    isDark = theme.isDark,
                     onClick = { onNavigate(Screen.Themes) },
                     modifier = Modifier.weight(1f)
                 )
@@ -344,6 +372,7 @@ fun ImmersiveBottomNavigation(
                     label = "Trophy",
                     icon = Icons.Default.EmojiEvents,
                     isActive = currentScreen == Screen.Achievements,
+                    isDark = theme.isDark,
                     onClick = { onNavigate(Screen.Achievements) },
                     modifier = Modifier.weight(1f)
                 )
@@ -355,7 +384,7 @@ fun ImmersiveBottomNavigation(
             modifier = Modifier
                 .offset(y = (-18).dp)
                 .size(64.dp)
-                .background(Color(0xFF020617), CircleShape)
+                .background(if (theme.isDark) Color(0xFF020617) else Color(0xFFF8FAFC), CircleShape)
                 .padding(4.dp), // outer border
             contentAlignment = Alignment.Center
         ) {
@@ -388,9 +417,12 @@ fun BottomNavItem(
     label: String,
     icon: ImageVector,
     isActive: Boolean,
+    isDark: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val activeColor = if (isDark) Color(0xFF818CF8) else Color(0xFF4F46E5)
+    val inactiveColor = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
     Column(
         modifier = modifier
             .fillMaxHeight()
@@ -401,7 +433,7 @@ fun BottomNavItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = if (isActive) Color(0xFF818CF8) else Color(0xFF64748B),
+            tint = if (isActive) activeColor else inactiveColor,
             modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
@@ -409,7 +441,7 @@ fun BottomNavItem(
             text = label,
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
-            color = if (isActive) Color(0xFF818CF8) else Color(0xFF64748B),
+            color = if (isActive) activeColor else inactiveColor,
             letterSpacing = 0.5.sp
         )
     }
@@ -467,7 +499,7 @@ fun HomeScreen(viewModel: GameViewModel, theme: GameTheme) {
                     text = "Memory Match",
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Black,
-                    color = Color.White
+                    color = theme.textColor
                 )
             }
             Row(
@@ -477,8 +509,8 @@ fun HomeScreen(viewModel: GameViewModel, theme: GameTheme) {
                 // Stars capsule
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFF1E293B).copy(alpha = 0.5f), RoundedCornerShape(50.dp))
-                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(50.dp))
+                        .background(theme.cardBackground.copy(alpha = 0.5f), RoundedCornerShape(50.dp))
+                        .border(1.dp, theme.textColor.copy(alpha = 0.1f), RoundedCornerShape(50.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Row(
@@ -495,7 +527,7 @@ fun HomeScreen(viewModel: GameViewModel, theme: GameTheme) {
                             text = "${profile?.coins ?: 0}",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = theme.textColor
                         )
                     }
                 }
@@ -504,13 +536,13 @@ fun HomeScreen(viewModel: GameViewModel, theme: GameTheme) {
                     onClick = { viewModel.navigateTo(Screen.Themes) },
                     modifier = Modifier
                         .size(36.dp)
-                        .background(Color(0xFF1E293B).copy(alpha = 0.5f), CircleShape)
-                        .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+                        .background(theme.cardBackground.copy(alpha = 0.5f), CircleShape)
+                        .border(1.dp, theme.textColor.copy(alpha = 0.1f), CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "Settings",
-                        tint = Color.White,
+                        tint = theme.textColor,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -611,6 +643,7 @@ fun HomeScreen(viewModel: GameViewModel, theme: GameTheme) {
                 stars = shadowStars,
                 icon = Icons.Default.Contrast,
                 gradientColors = listOf(Color(0xFF06B6D4), Color(0xFF2563EB)),
+                theme = theme,
                 onClick = { viewModel.startNextUnlockedLevelOfMode(GameMode.SHADOW_MATCH) }
             )
 
@@ -622,6 +655,7 @@ fun HomeScreen(viewModel: GameViewModel, theme: GameTheme) {
                 stars = soundStars,
                 icon = Icons.Default.GraphicEq,
                 gradientColors = listOf(Color(0xFFF43F5E), Color(0xFFEA580C)),
+                theme = theme,
                 onClick = { viewModel.startNextUnlockedLevelOfMode(GameMode.SOUND_MEMORY) }
             )
 
@@ -633,6 +667,7 @@ fun HomeScreen(viewModel: GameViewModel, theme: GameTheme) {
                 stars = sequenceStars,
                 icon = Icons.Default.Reorder,
                 gradientColors = listOf(Color(0xFF10B981), Color(0xFF0D9488)),
+                theme = theme,
                 onClick = { viewModel.startNextUnlockedLevelOfMode(GameMode.SEQUENCE_MEMORY) }
             )
         }
@@ -647,12 +682,15 @@ fun GameModeRow(
     stars: Int,
     icon: ImageVector,
     gradientColors: List<Color>,
+    theme: GameTheme,
     onClick: () -> Unit
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A).copy(alpha = 0.40f)),
+        colors = CardDefaults.cardColors(
+            containerColor = if (theme.isDark) Color(0xFF0F172A).copy(alpha = 0.40f) else Color.White.copy(alpha = 0.60f)
+        ),
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
+        border = BorderStroke(1.dp, theme.textColor.copy(alpha = 0.10f)),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -694,13 +732,13 @@ fun GameModeRow(
                         text = title,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = theme.textColor
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = description,
                         fontSize = 11.sp,
-                        color = Color(0xFF94A3B8)
+                        color = if (theme.isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
                     )
                 }
             }
@@ -1568,14 +1606,15 @@ fun GameCard(
 }
 
 // ----------------------------------------------------------------------------
-// CUSTOM THEMES STORE SCREEN
+// CUSTOM THEMES STORE SCREEN (SETTINGS)
 // ----------------------------------------------------------------------------
 
 @Composable
 fun ThemesScreen(viewModel: GameViewModel, theme: GameTheme) {
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val coins = profile?.coins ?: 0
-    val unlockedThemesList = profile?.unlockedThemes?.split(",") ?: listOf("synthwave")
+    val soundOn by viewModel.soundOn.collectAsStateWithLifecycle()
+    val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // HEADER
@@ -1591,7 +1630,7 @@ fun ThemesScreen(viewModel: GameViewModel, theme: GameTheme) {
                 Icon(Icons.Default.ArrowBack, "Back", tint = theme.textColor)
             }
 
-            Text("VISUAL THEMES", color = theme.textColor, fontWeight = FontWeight.Black, fontSize = 18.sp)
+            Text("SETTINGS", color = theme.textColor, fontWeight = FontWeight.Black, fontSize = 18.sp)
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("$coins", color = theme.textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -1604,10 +1643,130 @@ fun ThemesScreen(viewModel: GameViewModel, theme: GameTheme) {
 
         LazyColumn(
             modifier = Modifier.fillMaxWidth().weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // --- SETTINGS SECTION ---
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = theme.cardBackground.copy(alpha = 0.6f)),
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, theme.textColor.copy(alpha = 0.1f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text(
+                            text = "GAME PREFERENCES",
+                            color = theme.accentColor,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 12.sp,
+                            letterSpacing = 1.sp
+                        )
+
+                        // Sound Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(theme.accentColor.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (soundOn) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                                        contentDescription = "Sound Effect Icon",
+                                        tint = theme.accentColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Column {
+                                    Text("Sound Effects", color = theme.textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text("Enable synthesizer tones", color = theme.textColor.copy(alpha = 0.6f), fontSize = 11.sp)
+                                }
+                            }
+                            Switch(
+                                checked = soundOn,
+                                onCheckedChange = { viewModel.toggleSound() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = theme.accentColor,
+                                    checkedTrackColor = theme.accentColor.copy(alpha = 0.3f),
+                                    uncheckedThumbColor = Color.Gray,
+                                    uncheckedTrackColor = Color.Gray.copy(alpha = 0.2f)
+                                )
+                            )
+                        }
+
+                        HorizontalDivider(color = theme.textColor.copy(alpha = 0.1f))
+
+                        // Dark Mode / Light Mode Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(theme.accentColor.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (darkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                                        contentDescription = "Theme Mode Icon",
+                                        tint = theme.accentColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Column {
+                                    Text("App Mode", color = theme.textColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text(
+                                        text = if (darkMode) "Dark theme enabled" else "Light theme enabled",
+                                        color = theme.textColor.copy(alpha = 0.6f),
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                            Switch(
+                                checked = darkMode,
+                                onCheckedChange = { viewModel.toggleDarkMode() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = theme.accentColor,
+                                    checkedTrackColor = theme.accentColor.copy(alpha = 0.3f),
+                                    uncheckedThumbColor = Color.Gray,
+                                    uncheckedTrackColor = Color.Gray.copy(alpha = 0.2f)
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // --- THEMES LIST LABEL ---
+            item {
+                Text(
+                    text = "VISUAL THEMES (ALL FREE)",
+                    color = theme.accentColor,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 12.sp,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                )
+            }
+
+            // --- FREE THEMES LIST ---
             items(GameThemes.values.toList()) { targetTheme ->
-                val isUnlocked = unlockedThemesList.contains(targetTheme.id)
                 val isEquipped = profile?.activeThemeId == targetTheme.id
 
                 Card(
@@ -1641,7 +1800,7 @@ fun ThemesScreen(viewModel: GameViewModel, theme: GameTheme) {
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = if (isUnlocked) "Theme Unlocked" else "Cost: 🪙${targetTheme.cost}",
+                                text = "Free Theme",
                                 color = targetTheme.textColor.copy(alpha = 0.6f),
                                 fontSize = 12.sp
                             )
@@ -1660,24 +1819,16 @@ fun ThemesScreen(viewModel: GameViewModel, theme: GameTheme) {
                         // Action button
                         Button(
                             onClick = {
-                                if (isUnlocked) {
-                                    viewModel.equipTheme(targetTheme.id)
-                                } else if (coins >= targetTheme.cost) {
-                                    viewModel.purchaseTheme(targetTheme.id, targetTheme.cost)
-                                }
+                                viewModel.equipTheme(targetTheme.id)
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (isEquipped) Color.Gray else targetTheme.accentColor
                             ),
                             shape = RoundedCornerShape(8.dp),
-                            enabled = isUnlocked || coins >= targetTheme.cost
+                            enabled = !isEquipped
                         ) {
                             Text(
-                                text = when {
-                                    isEquipped -> "EQUIPPED"
-                                    isUnlocked -> "EQUIP"
-                                    else -> "UNLOCK"
-                                },
+                                text = if (isEquipped) "EQUIPPED" else "EQUIP",
                                 color = if (isEquipped) Color.White else Color.Black,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
